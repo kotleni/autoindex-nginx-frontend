@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { useBrowserLocation } from '@vueuse/core';
+import { useBrowserLocation, useUrlSearchParams } from '@vueuse/core';
 import { computed } from 'vue';
 import { File, Folder, CornerLeftUp } from '@lucide/vue';
 
@@ -15,6 +15,14 @@ interface Entry {
     isDir: boolean;
 }
 
+type SortMode = "name" | "date" | "size";
+type SortDirection = "normal" | "inverted";
+
+interface PageUrlParams {
+    sort?: SortMode,
+    direction?: SortDirection;
+}
+
 const location = useBrowserLocation();
 const parentPath = computed(() => 
         location.value
@@ -25,12 +33,18 @@ const parentPath = computed(() =>
             .join('/') + '/'
 );
 
+const params = useUrlSearchParams<PageUrlParams>();
+
+const sortMode = computed<SortMode>(() => params.sort ?? 'name');
+const sortDir = computed<SortDirection>(() => params.direction ?? 'normal');
+
 const { isPending, data } = useQuery({
     queryKey: ['files', location],
+    enabled: computed(() => !!location.value.pathname),
     queryFn: async (): Promise<Entry[]> => {
         const res = await fetch(`https://files.kotle.uk/api${location.value.pathname}`) 
-        const entries = await res.json();
-        return entries.map((entry) => ({
+        const rawEntries = await res.json();
+        return rawEntries.map((entry) => ({
             ...entry,
             link: getLink(entry),
             time: new Date(entry.mtime),
@@ -39,6 +53,64 @@ const { isPending, data } = useQuery({
     },
 });
 
+const sortedEntries = computed(() => {
+    if (!data.value) return [];
+
+    return sortEntries(
+        data.value,
+        sortMode.value,
+        sortDir.value,
+    );
+});
+
+function toggleSort(mode: SortMode) {
+    if (params.sort === mode) {
+        params.direction =
+            params.direction === 'normal' ? 'inverted' : 'normal';
+    } else {
+        params.sort = mode;
+        params.direction = 'normal';
+    }
+}
+
+function sortEntries(
+    entries: Entry[],
+    sortMode: SortMode,
+    sortDirection: SortDirection,
+): Entry[] {
+    const dir = sortDirection === "normal" ? 1 : -1;
+
+    return [...entries].sort((a, b) => {
+        if (a.isDir && !b.isDir) return -1;
+        if (!a.isDir && b.isDir) return 1;
+
+        if (sortMode === "name") {
+            if (a.name < b.name) return -1 * dir;
+            if (a.name > b.name) return 1 * dir;
+            return 0;
+        }
+
+        if (sortMode === "date") {
+            const at = a.time.getTime();
+            const bt = b.time.getTime();
+
+            if (at < bt) return -1 * dir;
+            if (at > bt) return 1 * dir;
+            return 0;
+        }
+
+        if (sortMode === "size") {
+            const as = a.size ?? 0;
+            const bs = b.size ?? 0;
+
+            if (as < bs) return -1 * dir;
+            if (as > bs) return 1 * dir;
+            return 0;
+        }
+
+        return 0;
+    });
+}
 function formattedSize(value: number): string {
     let size = value
     for(const unit of ['B', 'KiB', 'MiB', 'GiB', 'TiB']) {
@@ -111,15 +183,31 @@ function getLink(entry: Entry) {
 
     <div class="entry-list" v-else>
         <div class="entry header">
-            <div class="entry-box nona">
-                Name
+            <!-- TODO: Pass correct href as well -->
+            <div class="entry-box">
+                <a href="" @click.prevent="toggleSort('name')">
+                    Name
+                    <span v-if="params.sort === 'name'">
+                        {{ params.direction === 'normal' ? '↑' : '↓' }}
+                    </span>
+                </a>
             </div>
-            <div class="entry-box nona">
-                Size
-            </div>
-            <div class="entry-box nona">
-                Update time
-            </div>
+            <div class="entry-box">
+                <a href="" @click.prevent="toggleSort('size')">
+                    Size
+                    <span v-if="params.sort === 'size'">
+                        {{ params.direction === 'normal' ? '↑' : '↓' }}
+                    </span>
+                </a>
+             </div>
+            <div class="entry-box">
+                <a href="" @click.prevent="toggleSort('date')">
+                    Update date
+                    <span v-if="params.sort === 'date'">
+                        {{ params.direction === 'normal' ? '↑' : '↓' }}
+                    </span>
+                </a>
+             </div>
         </div>
 
         <div v-if="location.pathname !== '/'" class="entry">
@@ -134,7 +222,7 @@ function getLink(entry: Entry) {
         </div>
 
         <div 
-            v-for="entry in data"
+            v-for="entry in sortedEntries"
             :key="entry.name"
             class="entry">
 
