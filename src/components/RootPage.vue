@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { useBrowserLocation, useUrlSearchParams } from '@vueuse/core';
-import { computed, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { File, Folder, CornerLeftUp } from '@lucide/vue';
 
 type EntryType = 'directory' | 'file';
@@ -32,30 +32,40 @@ interface PageUrlParams {
 
 const API_URL = import.meta.env.VITE_NGINX_AUTOINDEX_URL;
 
-const location = useBrowserLocation();
+// const location = useBrowserLocation();
 const parentPath = computed(() => 
-        location.value
-            .pathname
+        location.pathname
             ?.replace(/[/]*$/, '')
             .split('/')
             .slice(0, -1)
             .join('/') + '/'
 );
 
+// const location = window.location;
+const currentPath = ref(location.pathname);
+
 const params = useUrlSearchParams<PageUrlParams>();
 
 const sortMode = computed<SortMode>(() => params.sort ?? 'name');
 const sortDir = computed<SortDirection>(() => params.direction ?? 'normal');
 
-watch(location, () => {
-    document.title = `Index: ${location.value.pathname}`;
-}, { immediate: true })
+watch(currentPath, () => {
+    document.title = `Index: ${currentPath.value}`;
+    if (currentPath.value !== location.pathname)
+        history.pushState({}, '', currentPath.value);
+}, { immediate: true });
+
+onMounted(() => {
+    window.addEventListener('popstate', () => {
+        currentPath.value = location.pathname;
+    });
+});
 
 const { isPending, data } = useQuery({
-    queryKey: ['files', location],
-    enabled: computed(() => !!location.value.pathname),
+    queryKey: ['files', currentPath],
+    // enabled: computed(() => !!location.value.pathname),
     queryFn: async (): Promise<Entry[]> => {
-        const res = await fetch(`${API_URL}${location.value.pathname}`) 
+        const res = await fetch(`${API_URL}${currentPath.value}`) 
         const rawEntries = (await res.json()) as RawEntry[];
         return rawEntries.map((entry) => ({
             ...entry,
@@ -75,6 +85,10 @@ const sortedEntries = computed(() => {
         sortDir.value,
     );
 });
+
+function openPath(path: string) {
+    currentPath.value = path;
+}
 
 function toggleSort(mode: SortMode) {
     if (params.sort === mode) {
@@ -137,7 +151,7 @@ function formattedSize(value: number): string {
 
 function getLink(name: string, type: EntryType) {
     if (type === 'file')
-        return `${API_URL}${location.value.pathname}/${name}`;
+        return `${API_URL}${location.pathname}/${name}`;
     return name;
 }
 </script>
@@ -189,7 +203,7 @@ function getLink(name: string, type: EntryType) {
 <template>
     <div class="page">
 
-        <h2>Directory of {{location.pathname}}</h2>
+        <h2>Directory of {{currentPath}}</h2>
     <div v-if="isPending">
         Loading...
     </div>
@@ -223,9 +237,9 @@ function getLink(name: string, type: EntryType) {
              </div>
         </div>
 
-        <div v-if="location.pathname !== '/'" class="entry">
+        <div v-if="currentPath !== '/'" class="entry">
             <div class="entry-box">
-                <a :key="parentPath" :href="parentPath"  @click.prevent="location.pathname = parentPath">
+                <a :key="parentPath" :href="parentPath"  @click.prevent="openPath(parentPath)">
                     <CornerLeftUp />
                     ../
                 </a>
@@ -243,7 +257,7 @@ function getLink(name: string, type: EntryType) {
                 <!-- TODO: Refactor -->
                 <a 
                     :href="entry.link + '/'" 
-                    @click="if(entry.type === 'directory') { $event.preventDefault(); location.pathname += entry.link + '/'; }">
+                    @click="if(entry.isDir) { $event.preventDefault(); openPath(currentPath + entry.link + '/'); }">
                     <Folder v-if="entry.isDir" />
                     <File v-else />
                     {{entry.name + (entry.isDir ? '/' : '')}}
