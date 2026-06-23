@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { useBrowserLocation, useUrlSearchParams } from '@vueuse/core';
+import { useUrlSearchParams } from '@vueuse/core';
 import { computed, onMounted, ref, watch } from 'vue';
 import { File, Folder, CornerLeftUp } from '@lucide/vue';
+import { basePath, joinPath, rebuildPath } from '../lib/appurl';
 
 type EntryType = 'directory' | 'file';
 
@@ -32,16 +33,8 @@ interface PageUrlParams {
 
 const API_URL = import.meta.env.VITE_NGINX_AUTOINDEX_URL;
 
-// const location = useBrowserLocation();
-const parentPath = computed(() => 
-        location.pathname
-            ?.replace(/[/]*$/, '')
-            .split('/')
-            .slice(0, -1)
-            .join('/') + '/'
-);
+const parentPath = computed(() => basePath(currentPath.value));
 
-// const location = window.location;
 const currentPath = ref(location.pathname);
 
 const params = useUrlSearchParams<PageUrlParams>();
@@ -65,7 +58,7 @@ const { isPending, data } = useQuery({
     queryKey: ['files', currentPath],
     // enabled: computed(() => !!location.value.pathname),
     queryFn: async (): Promise<Entry[]> => {
-        const res = await fetch(`${API_URL}${currentPath.value}`) 
+        const res = await fetch(`${API_URL}${currentPath.value}/`) 
         const rawEntries = (await res.json()) as RawEntry[];
         return rawEntries.map((entry) => ({
             ...entry,
@@ -151,7 +144,7 @@ function formattedSize(value: number): string {
 
 function getLink(name: string, type: EntryType) {
     if (type === 'file')
-        return `${API_URL}${location.pathname}/${name}`;
+        return API_URL + rebuildPath(`${location.pathname}/${name}`);
     return name;
 }
 </script>
@@ -239,7 +232,10 @@ function getLink(name: string, type: EntryType) {
 
         <div v-if="currentPath !== '/'" class="entry">
             <div class="entry-box">
-                <a :key="parentPath" :href="parentPath"  @click.prevent="openPath(parentPath)">
+                <a
+                    :key="parentPath"
+                    :href="joinPath(parentPath, [''])"
+                    @click.prevent="openPath(joinPath(parentPath, ['']))">
                     <CornerLeftUp />
                     ../
                 </a>
@@ -256,12 +252,12 @@ function getLink(name: string, type: EntryType) {
             <div class="entry-box">
                 <!-- TODO: Refactor -->
                 <a 
-                    :href="entry.link + '/'" 
-                    @click="if(entry.isDir) { $event.preventDefault(); openPath(currentPath + entry.link + '/'); }">
+                    :href="entry.isDir ? joinPath(entry.link, ['']) : entry.link" 
+                    @click="if(entry.isDir) { $event.preventDefault(); openPath(joinPath(currentPath, [entry.link, ''])); }">
                     <Folder v-if="entry.isDir" />
                     <File v-else />
                     {{entry.name + (entry.isDir ? '/' : '')}}
-                </a>
+               </a>
             </div>
             <div class="entry-box nona">
                 <template v-if="entry.type === 'file'">
