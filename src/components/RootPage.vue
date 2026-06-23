@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { useBrowserLocation, useUrlSearchParams } from '@vueuse/core';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { File, Folder, CornerLeftUp } from '@lucide/vue';
 
 type EntryType = 'directory' | 'file';
@@ -46,6 +46,10 @@ const params = useUrlSearchParams<PageUrlParams>();
 
 const sortMode = computed<SortMode>(() => params.sort ?? 'name');
 const sortDir = computed<SortDirection>(() => params.direction ?? 'normal');
+
+watch(location, () => {
+    document.title = `Index: ${location.value.pathname}`;
+}, { immediate: true })
 
 const { isPending, data } = useQuery({
     queryKey: ['files', location],
