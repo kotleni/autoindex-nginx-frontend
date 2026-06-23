@@ -82,6 +82,9 @@ function getLink(entry: Entry) {
     .entry {
         display: contents;
     }
+    .entry.header {
+        font-weight: 600;
+    }
     .entry a {
         color: var(--accent);
         padding: 4px 8px;
@@ -107,6 +110,18 @@ function getLink(entry: Entry) {
     </div>
 
     <div class="entry-list" v-else>
+        <div class="entry header">
+            <div class="entry-box nona">
+                Name
+            </div>
+            <div class="entry-box nona">
+                Size
+            </div>
+            <div class="entry-box nona">
+                Update time
+            </div>
+        </div>
+
         <div v-if="location.pathname !== '/'" class="entry">
             <div class="entry-box">
                 <a :key="parentPath" :href="parentPath"  @click.prevent="location.pathname = parentPath">
