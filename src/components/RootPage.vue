@@ -6,6 +6,13 @@ import { File, Folder, CornerLeftUp } from '@lucide/vue';
 
 type EntryType = 'directory' | 'file';
 
+interface RawEntry {
+    name: string;
+    type: EntryType;
+    mtime: string;
+    size?: number;
+}
+
 interface Entry {
     name: string;
     type: EntryType;
@@ -43,10 +50,10 @@ const { isPending, data } = useQuery({
     enabled: computed(() => !!location.value.pathname),
     queryFn: async (): Promise<Entry[]> => {
         const res = await fetch(`https://files.kotle.uk/api${location.value.pathname}`) 
-        const rawEntries = await res.json();
+        const rawEntries = (await res.json()) as RawEntry[];
         return rawEntries.map((entry) => ({
             ...entry,
-            link: getLink(entry),
+            link: getLink(entry.name, entry.type),
             time: new Date(entry.mtime),
             isDir: entry.type === 'directory',
         }));
@@ -122,10 +129,10 @@ function formattedSize(value: number): string {
     return `${size} PiB`
 }
 
-function getLink(entry: Entry) {
-    if (entry.type === 'file')
-        return `https://files.kotle.uk/api${location.value.pathname}/${entry.name}`;
-    return entry.name;
+function getLink(name: string, type: EntryType) {
+    if (type === 'file')
+        return `https://files.kotle.uk/api${location.value.pathname}/${name}`;
+    return name;
 }
 </script>
 
@@ -238,7 +245,7 @@ function getLink(entry: Entry) {
             </div>
             <div class="entry-box nona">
                 <template v-if="entry.type === 'file'">
-                    {{formattedSize(entry.size)}}
+                    {{formattedSize(entry.size ?? -1)}}
                 </template>
             </div>
             <div class="entry-box nona">
