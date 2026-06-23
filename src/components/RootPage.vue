@@ -30,6 +30,8 @@ interface PageUrlParams {
     direction?: SortDirection;
 }
 
+const API_URL = import.meta.env.VITE_NGINX_AUTOINDEX_URL;
+
 const location = useBrowserLocation();
 const parentPath = computed(() => 
         location.value
@@ -49,7 +51,7 @@ const { isPending, data } = useQuery({
     queryKey: ['files', location],
     enabled: computed(() => !!location.value.pathname),
     queryFn: async (): Promise<Entry[]> => {
-        const res = await fetch(`https://files.kotle.uk/api${location.value.pathname}`) 
+        const res = await fetch(`${API_URL}${location.value.pathname}`) 
         const rawEntries = (await res.json()) as RawEntry[];
         return rawEntries.map((entry) => ({
             ...entry,
@@ -131,7 +133,7 @@ function formattedSize(value: number): string {
 
 function getLink(name: string, type: EntryType) {
     if (type === 'file')
-        return `https://files.kotle.uk/api${location.value.pathname}/${name}`;
+        return `${API_URL}${location.value.pathname}/${name}`;
     return name;
 }
 </script>
