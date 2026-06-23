@@ -52,7 +52,7 @@ const sortDir = computed<SortDirection>(() => params.direction ?? 'normal');
 watch(currentPath, () => {
     document.title = `Index: ${currentPath.value}`;
     if (currentPath.value !== location.pathname)
-        history.pushState({}, '', currentPath.value);
+        history.pushState({}, '', currentPath.value + location.search);
 }, { immediate: true });
 
 onMounted(() => {
