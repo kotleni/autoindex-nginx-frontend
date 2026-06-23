@@ -5,4 +5,5 @@ services:
       - "8000:80"
     volumes:
       - ../files:/var/www/files
-
+    env_file:
+      - .env
