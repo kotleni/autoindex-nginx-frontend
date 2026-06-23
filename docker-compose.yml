@@ -1,0 +1,8 @@
+services:
+  autoindex-nginx:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - ../files:/var/www/files
+
