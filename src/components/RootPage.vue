@@ -19,13 +19,13 @@ const location = useBrowserLocation();
 const parentPath = computed(() => 
         location.value
             .pathname
-            .replace(/[/]*$/, '')
+            ?.replace(/[/]*$/, '')
             .split('/')
             .slice(0, -1)
             .join('/') + '/'
 );
 
-const { isPending, isFetching, isError, data, error } = useQuery({
+const { isPending, data } = useQuery({
     queryKey: ['files', location],
     queryFn: async (): Promise<Entry[]> => {
         const res = await fetch(`https://files.kotle.uk/api${location.value.pathname}`) 
@@ -61,7 +61,7 @@ function getLink(entry: Entry) {
     .page {
         --columns: 3;
         --border: 1px solid #444;
-    
+
         padding: 32px;
     }
     .entry-list {
@@ -71,8 +71,8 @@ function getLink(entry: Entry) {
         border-left: var(--border);
     }
     .entry-box {
-        /* padding: 4px 8px; */
         font-size: 0.93rem;
+        font-weight: 500;
         border-bottom: var(--border);
         border-right: var(--border);
     }
