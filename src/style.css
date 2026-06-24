@@ -1,28 +1,60 @@
 :root {
-  --text: #000000;
-  --bg: #fefefe;
-  --border: #444444;
-  --accent: #4f7942;
+    --text: #000000;
+    --bg: #fefefe;
+    --border: #444444;
+    --accent: #4f7942;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+    --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  color-scheme: light dark;
+    color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --text: #ffffff;
-    --bg: #16171d;
-    --border: #444444;
-    --accent: #00bc8c;
-  }
+    :root {
+        --text: #ffffff;
+        --bg: #16171d;
+        --border: #444444;
+        --accent: #00bc8c;
+    }
 }
 
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
+    margin: 0;
 
-  font: 16px var(--sans);
+    background: var(--bg);
+    color: var(--text);
+
+    font: 16px var(--sans);
+}
+
+.container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 576px) {
+    .container {
+        max-width: 540px;
+    }
+}
+
+@media (min-width: 768px) {
+    .container {
+        max-width: 720px;
+    }
+}
+
+@media (min-width: 992px) {
+    .container {
+        max-width: 960px;
+    }
+}
+
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
 }
 

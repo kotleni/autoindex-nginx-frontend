@@ -151,14 +151,16 @@ function getLink(name: string, type: EntryType) {
 
 <style scoped>
     .page {
-        --columns: 3;
         --border: 1px solid #444;
 
-        padding: 32px;
+        box-sizing: border-box;
+
+        width: 100%;
+        padding: 2px;
     }
     .entry-list {
         display: grid;
-        grid-template-columns: repeat(var(--columns), auto);
+        grid-template-columns: 1fr auto auto; 
         border-top: var(--border);
         border-left: var(--border);
     }
@@ -167,6 +169,10 @@ function getLink(name: string, type: EntryType) {
         font-weight: 500;
         border-bottom: var(--border);
         border-right: var(--border);
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .entry-box.nona {
         padding: 4px 8px;
