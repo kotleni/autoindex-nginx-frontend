@@ -32,6 +32,9 @@ interface PageUrlParams {
 }
 
 const API_URL = import.meta.env.VITE_NGINX_AUTOINDEX_URL;
+const OWNER_SOCIAL_URL = import.meta.env.VITE_OWNER_SOCIAL_URL;
+const OWNER_SOCIAL_NAME = import.meta.env.VITE_OWNER_SOCIAL_NAME;
+const PROJECT_GITHUB = "https://github.com/kotleni/autoindex-nginx-frontend";
 
 const parentPath = computed(() => basePath(currentPath.value));
 
@@ -197,12 +200,26 @@ function getLink(name: string, type: EntryType) {
     .entry a svg {
        height: 14px; 
     }
+    .footer {
+        padding-top: 8px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    .footer a {
+        font-size: 0.8rem;
+        color: var(--accent);
+        text-decoration: none;
+    }
+    .footer a:hover {
+        text-decoration: underline;
+    }
 </style>
 
 <template>
     <div class="page">
 
-        <h2>Directory of {{currentPath}}</h2>
+    <h2>Directory of {{currentPath}}</h2>
     <div v-if="isPending">
         Loading...
     </div>
@@ -274,6 +291,11 @@ function getLink(name: string, type: EntryType) {
                 {{entry.time.toISOString()}}
             </div>
         </div>
+    </div>
+
+    <div class="footer">
+        <a :href="OWNER_SOCIAL_URL" target="_blank">{{OWNER_SOCIAL_NAME}}</a>
+        <a :href="PROJECT_GITHUB" target="_blank">Source code</a>
     </div>
     </div>
 </template>
